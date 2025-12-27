@@ -1,0 +1,36 @@
+services:
+  # Backend API Service
+  - type: web
+    name: dental-clinic-api
+    env: node
+    buildCommand: npm install
+    startCommand: npm run start:server
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      # Add your Railway MySQL credentials here
+      - key: MYSQLHOST
+        sync: false
+      - key: MYSQLUSER
+        sync: false
+      - key: MYSQLPASSWORD
+        sync: false
+      - key: MYSQLDATABASE
+        sync: false
+      - key: MYSQLPORT
+        sync: false
+      - key: RAILWAY_ENVIRONMENT
+        value: true
+
+  # Frontend Service (Static Site)
+  - type: web
+    name: dental-clinic-frontend
+    env: node
+    buildCommand: chmod +x build-render.sh && ./build-render.sh
+    staticPublishPath: ./dist/todo/browser
+    envVars:
+      - key: NODE_ENV
+        value: production
+

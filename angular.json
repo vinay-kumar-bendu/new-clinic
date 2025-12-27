@@ -39,7 +39,8 @@
             "outputMode": "server",
             "ssr": {
               "entry": "src/server.ts"
-            }
+            },
+            "prerender": false
           },
           "configurations": {
             "production": {
@@ -61,6 +62,15 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "client": {
+              "outputHashing": "all",
+              "optimization": true,
+              "sourceMap": false,
+              "extractLicenses": false,
+              "vendorChunk": false,
+              "buildOptimizer": true,
+              "outputMode": "static"
             }
           },
           "defaultConfiguration": "production"
