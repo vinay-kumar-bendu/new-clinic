@@ -1,0 +1,67 @@
+<div class="login-container">
+  <div class="login-left">
+    <div class="image-carousel">
+      <div 
+        class="carousel-image" 
+        *ngFor="let image of dentalImages; let i = index"
+        [class.active]="i === currentImageIndex"
+        [style.background-image]="'url(' + image + ')'">
+      </div>
+      <div class="carousel-overlay">
+        <h1>🦷 Smiles Dental Clinic</h1>
+        <p>Your Smile is Our Priority</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="login-right">
+    <div class="login-form-container">
+      <div class="login-header">
+        <h2>Welcome Back</h2>
+        <p>Sign in to continue</p>
+      </div>
+      
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input 
+            type="text" 
+            id="username" 
+            formControlName="username"
+            placeholder="Enter your username"
+            [class.error]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
+          />
+          <span class="error-message" *ngIf="loginForm.get('username')?.invalid && loginForm.get('username')?.touched">
+            Username is required
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input 
+            type="password" 
+            id="password" 
+            formControlName="password"
+            placeholder="Enter your password"
+            [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+          />
+          <span class="error-message" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+            Password is required
+          </span>
+        </div>
+
+        <div class="error-message" *ngIf="errorMessage">
+          {{ errorMessage }}
+        </div>
+
+        <button type="submit" class="login-btn" [disabled]="loginForm.invalid">
+          Login
+        </button>
+
+        <div class="login-hint">
+          <p><small>Default: username: <strong>admin</strong>, password: <strong>admin123</strong></small></p>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

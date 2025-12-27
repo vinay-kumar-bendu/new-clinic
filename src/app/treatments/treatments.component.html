@@ -1,0 +1,119 @@
+<div class="treatments-container">
+  <div class="header">
+    <h1>Treatment Records</h1>
+    <button class="btn btn-primary" (click)="openAddForm()">+ New Treatment</button>
+  </div>
+
+  <div class="filter-bar">
+    <label>Filter by Patient:</label>
+    <select [(ngModel)]="selectedPatientId">
+      <option [value]="0">All Patients</option>
+      <option *ngFor="let patient of patients" [value]="patient.id">
+        {{ patient.firstName }} {{ patient.lastName }}
+      </option>
+    </select>
+  </div>
+
+  <div class="treatments-list" *ngIf="filteredTreatments.length > 0; else noTreatments">
+    <div class="treatment-card" *ngFor="let treatment of filteredTreatments">
+      <div class="treatment-header">
+        <h3>{{ getPatientName(treatment.patientId) }}</h3>
+        <span class="treatment-type">{{ treatment.treatmentType }}</span>
+      </div>
+      <div class="treatment-details">
+        <p><strong>Date:</strong> {{ treatment.treatmentDate | date:'short' }}</p>
+        <p *ngIf="treatment.toothNumber"><strong>Tooth Number:</strong> {{ treatment.toothNumber }}</p>
+        <p><strong>Diagnosis:</strong> {{ treatment.diagnosis }}</p>
+        <p><strong>Procedure:</strong> {{ treatment.procedure }}</p>
+        <p *ngIf="treatment.description"><strong>Description:</strong> {{ treatment.description }}</p>
+        <p *ngIf="treatment.notes"><strong>Notes:</strong> {{ treatment.notes }}</p>
+        <p *ngIf="treatment.nextVisitDate"><strong>Next Visit:</strong> {{ treatment.nextVisitDate | date:'short' }}</p>
+      </div>
+      <div class="treatment-actions">
+        <button class="btn btn-edit" (click)="openEditForm(treatment)">Edit</button>
+        <button class="btn btn-delete" (click)="deleteTreatment(treatment.id)">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #noTreatments>
+    <div class="empty-state">
+      <p>No treatment records found.</p>
+    </div>
+  </ng-template>
+
+  <div class="modal" *ngIf="showForm">
+    <div class="modal-content">
+      <h2>{{ editingTreatment ? 'Edit Treatment' : 'New Treatment' }}</h2>
+      <form (ngSubmit)="saveTreatment()">
+        <div class="form-group">
+          <label>Patient *</label>
+          <select [(ngModel)]="treatmentForm.patientId" name="patientId" required>
+            <option value="0">Select Patient</option>
+            <option *ngFor="let patient of patients" [value]="patient.id">
+              {{ patient.firstName }} {{ patient.lastName }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Treatment Date *</label>
+            <input type="date" [(ngModel)]="treatmentForm.treatmentDate" name="treatmentDate" required />
+          </div>
+          <div class="form-group">
+            <label>Tooth Number</label>
+            <input type="text" [(ngModel)]="treatmentForm.toothNumber" name="toothNumber" 
+              placeholder="e.g., 12, 21-25" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Treatment Type *</label>
+          <select [(ngModel)]="treatmentForm.treatmentType" name="treatmentType" required>
+            <option value="Cleaning">Cleaning</option>
+            <option value="Filling">Filling</option>
+            <option value="Root Canal">Root Canal</option>
+            <option value="Extraction">Extraction</option>
+            <option value="Crown">Crown</option>
+            <option value="Bridge">Bridge</option>
+            <option value="Implant">Implant</option>
+            <option value="Orthodontic">Orthodontic</option>
+            <option value="Whitening">Whitening</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Diagnosis *</label>
+          <textarea [(ngModel)]="treatmentForm.diagnosis" name="diagnosis" rows="2" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Procedure *</label>
+          <textarea [(ngModel)]="treatmentForm.procedure" name="procedure" rows="2" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea [(ngModel)]="treatmentForm.description" name="description" rows="2"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea [(ngModel)]="treatmentForm.notes" name="notes" rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Next Visit Date</label>
+          <input type="date" [(ngModel)]="treatmentForm.nextVisitDate" name="nextVisitDate" />
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-cancel" (click)="cancelForm()">Cancel</button>
+          <button type="submit" class="btn btn-submit">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

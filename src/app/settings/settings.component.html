@@ -1,0 +1,48 @@
+<div class="settings-fab" (click)="show()" *ngIf="!showModal">
+  <span class="settings-icon">⚙️</span>
+</div>
+
+<div class="settings-modal-backdrop" *ngIf="showModal" (click)="close()"></div>
+<div class="settings-modal" *ngIf="showModal">
+  <div class="settings-header">
+    <h2><span class="settings-icon">⚙️</span> Settings</h2>
+    <button class="close-btn" type="button" (click)="close()">×</button>
+  </div>
+  <div class="settings-content">
+    <form [formGroup]="changePasswordForm" (ngSubmit)="changePassword()" class="form-section">
+      <h3>Change Password</h3>
+      <div class="form-group">
+        <label>Current Password</label>
+        <input type="password" formControlName="currentPassword" />
+      </div>
+      <div class="form-group">
+        <label>New Password</label>
+        <input type="password" formControlName="newPassword" />
+      </div>
+      <div class="form-group">
+        <label>Confirm New Password</label>
+        <input type="password" formControlName="confirmNewPassword" />
+      </div>
+      <button type="submit" class="settings-btn">Change Password</button>
+      <div class="settings-message" *ngIf="passwordMessage">{{ passwordMessage }}</div>
+    </form>
+    <div class="divider"></div>
+    <form [formGroup]="addUserForm" (ngSubmit)="addUser()" class="form-section">
+      <h3>Add / Replace User</h3>
+      <div class="form-group">
+        <label>New Username</label>
+        <input type="text" formControlName="username" />
+      </div>
+      <div class="form-group">
+        <label>New Password</label>
+        <input type="password" formControlName="password" />
+      </div>
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <input type="password" formControlName="confirmPassword" />
+      </div>
+      <button type="submit" class="settings-btn">Add/Update User</button>
+      <div class="settings-message" *ngIf="addUserMessage">{{ addUserMessage }}</div>
+    </form>
+  </div>
+</div>

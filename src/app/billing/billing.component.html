@@ -1,0 +1,131 @@
+<div class="billing-container">
+  <div class="header">
+    <h1>Billing & Payments</h1>
+    <button class="btn btn-primary" (click)="openAddForm()">+ New Payment</button>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-card">
+      <h3>Total Revenue</h3>
+      <p class="stat-value revenue">${{ totalRevenue | number:'1.2-2' }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Pending Amount</h3>
+      <p class="stat-value pending">${{ pendingAmount | number:'1.2-2' }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Total Payments</h3>
+      <p class="stat-value">{{ payments.length }}</p>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <label>Filter by Patient:</label>
+    <select [(ngModel)]="selectedPatientId">
+      <option [value]="0">All Patients</option>
+      <option *ngFor="let patient of patients" [value]="patient.id">
+        {{ patient.firstName }} {{ patient.lastName }}
+      </option>
+    </select>
+  </div>
+
+  <div class="payments-list" *ngIf="filteredPayments.length > 0; else noPayments">
+    <div class="payment-card" *ngFor="let payment of filteredPayments">
+      <div class="payment-info">
+        <div class="payment-header">
+          <h3>{{ getPatientName(payment.patientId) }}</h3>
+          <span class="invoice-number">{{ payment.invoiceNumber }}</span>
+        </div>
+        <div class="payment-details">
+          <p><strong>Date:</strong> {{ payment.paymentDate | date:'short' }}</p>
+          <p><strong>Amount:</strong> ${{ payment.amount | number:'1.2-2' }}</p>
+          <p><strong>Method:</strong> {{ payment.paymentMethod }}</p>
+          <p><strong>Type:</strong> {{ payment.paymentType }}</p>
+          <p><strong>Status:</strong> 
+            <span [class]="'status-' + payment.status.toLowerCase()">{{ payment.status }}</span>
+          </p>
+          <p *ngIf="payment.description"><strong>Description:</strong> {{ payment.description }}</p>
+        </div>
+      </div>
+      <div class="payment-actions">
+        <button class="btn btn-edit" (click)="openEditForm(payment)">Edit</button>
+        <button class="btn btn-delete" (click)="deletePayment(payment.id)">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #noPayments>
+    <div class="empty-state">
+      <p>No payment records found.</p>
+    </div>
+  </ng-template>
+
+  <div class="modal" *ngIf="showForm">
+    <div class="modal-content">
+      <h2>{{ editingPayment ? 'Edit Payment' : 'New Payment' }}</h2>
+      <form (ngSubmit)="savePayment()">
+        <div class="form-group">
+          <label>Patient *</label>
+          <select [(ngModel)]="paymentForm.patientId" name="patientId" required>
+            <option value="0">Select Patient</option>
+            <option *ngFor="let patient of patients" [value]="patient.id">
+              {{ patient.firstName }} {{ patient.lastName }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Payment Date *</label>
+            <input type="date" [(ngModel)]="paymentForm.paymentDate" name="paymentDate" required />
+          </div>
+          <div class="form-group">
+            <label>Amount *</label>
+            <input type="number" [(ngModel)]="paymentForm.amount" name="amount" min="0" step="0.01" required />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Payment Method *</label>
+            <select [(ngModel)]="paymentForm.paymentMethod" name="paymentMethod" required>
+              <option value="Cash">Cash</option>
+              <option value="Credit Card">Credit Card</option>
+              <option value="Debit Card">Debit Card</option>
+              <option value="Insurance">Insurance</option>
+              <option value="Check">Check</option>
+              <option value="Online">Online</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Payment Type *</label>
+            <select [(ngModel)]="paymentForm.paymentType" name="paymentType" required>
+              <option value="Full Payment">Full Payment</option>
+              <option value="Partial Payment">Partial Payment</option>
+              <option value="Deposit">Deposit</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Status *</label>
+          <select [(ngModel)]="paymentForm.status" name="status" required>
+            <option value="Paid">Paid</option>
+            <option value="Pending">Pending</option>
+            <option value="Refunded">Refunded</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea [(ngModel)]="paymentForm.description" name="description" rows="3"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-cancel" (click)="cancelForm()">Cancel</button>
+          <button type="submit" class="btn btn-submit">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,56 @@
+<div class="patient-list-container">
+  <div class="header">
+    <h1>Patient Management</h1>
+    <button class="btn btn-primary" (click)="addPatient()">
+      <span>+</span> Add New Patient
+    </button>
+  </div>
+
+  <div class="search-bar">
+    <input 
+      type="text" 
+      placeholder="Search patients by name, phone, or email..." 
+      [(ngModel)]="searchTerm"
+      class="search-input"
+    />
+  </div>
+
+  <div class="table-container" *ngIf="filteredPatients.length > 0; else noPatients">
+    <table class="patient-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Age</th>
+          <th>Gender</th>
+          <th>Phone</th>
+          <th>Email</th>
+          <th>Last Visit</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let patient of filteredPatients">
+          <td>{{ patient.id }}</td>
+          <td>{{ patient.firstName }} {{ patient.lastName }}</td>
+          <td>{{ getAge(patient.dateOfBirth) }}</td>
+          <td>{{ patient.gender }}</td>
+          <td>{{ patient.phone }}</td>
+          <td>{{ patient.email }}</td>
+          <td>{{ patient.lastVisit ? (patient.lastVisit | date:'short') : 'Never' }}</td>
+          <td class="actions">
+            <button class="btn btn-view" (click)="viewPatient(patient.id)">View</button>
+            <button class="btn btn-edit" (click)="editPatient(patient.id)">Edit</button>
+            <button class="btn btn-delete" (click)="deletePatient(patient.id)">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ng-template #noPatients>
+    <div class="empty-state">
+      <p>No patients found. Click "Add New Patient" to get started.</p>
+    </div>
+  </ng-template>
+</div>

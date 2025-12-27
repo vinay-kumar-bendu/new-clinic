@@ -1,0 +1,85 @@
+<div class="form-container">
+  <div class="form-card">
+    <h1>{{ isEditMode ? 'Edit Employee' : 'Add New Employee' }}</h1>
+    
+    <form [formGroup]="employeeForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="name">Name *</label>
+        <input 
+          type="text" 
+          id="name" 
+          formControlName="name"
+          [class.error]="employeeForm.get('name')?.invalid && employeeForm.get('name')?.touched"
+          placeholder="Enter employee name"
+        />
+        <span class="error-message" *ngIf="employeeForm.get('name')?.invalid && employeeForm.get('name')?.touched">
+          {{ getErrorMessage('name') }}
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email *</label>
+        <input 
+          type="email" 
+          id="email" 
+          formControlName="email"
+          [class.error]="employeeForm.get('email')?.invalid && employeeForm.get('email')?.touched"
+          placeholder="Enter email address"
+        />
+        <span class="error-message" *ngIf="employeeForm.get('email')?.invalid && employeeForm.get('email')?.touched">
+          {{ getErrorMessage('email') }}
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label for="position">Position *</label>
+        <input 
+          type="text" 
+          id="position" 
+          formControlName="position"
+          [class.error]="employeeForm.get('position')?.invalid && employeeForm.get('position')?.touched"
+          placeholder="Enter job position"
+        />
+        <span class="error-message" *ngIf="employeeForm.get('position')?.invalid && employeeForm.get('position')?.touched">
+          {{ getErrorMessage('position') }}
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label for="department">Department *</label>
+        <input 
+          type="text" 
+          id="department" 
+          formControlName="department"
+          [class.error]="employeeForm.get('department')?.invalid && employeeForm.get('department')?.touched"
+          placeholder="Enter department"
+        />
+        <span class="error-message" *ngIf="employeeForm.get('department')?.invalid && employeeForm.get('department')?.touched">
+          {{ getErrorMessage('department') }}
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label for="salary">Salary *</label>
+        <input 
+          type="number" 
+          id="salary" 
+          formControlName="salary"
+          [class.error]="employeeForm.get('salary')?.invalid && employeeForm.get('salary')?.touched"
+          placeholder="Enter salary"
+          min="0"
+        />
+        <span class="error-message" *ngIf="employeeForm.get('salary')?.invalid && employeeForm.get('salary')?.touched">
+          {{ getErrorMessage('salary') }}
+        </span>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-cancel" (click)="cancel()">Cancel</button>
+        <button type="submit" class="btn btn-submit" [disabled]="employeeForm.invalid">
+          {{ isEditMode ? 'Update Employee' : 'Add Employee' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

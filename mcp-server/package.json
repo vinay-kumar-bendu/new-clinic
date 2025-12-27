@@ -1,0 +1,21 @@
+{
+  "name": "dental-clinic-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP Server for Dental Clinic MySQL Database",
+  "main": "index.js",
+  "type": "commonjs",
+  "bin": {
+    "dental-clinic-mcp": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "mysql2": "^3.16.0",
+    "dotenv": "^17.2.3"
+  }
+}
+
+
+

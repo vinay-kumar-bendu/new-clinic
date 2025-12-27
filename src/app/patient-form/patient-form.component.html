@@ -1,0 +1,132 @@
+<div class="form-container">
+  <div class="form-card">
+    <h1>{{ isEditMode ? 'Edit Patient' : 'Add New Patient' }}</h1>
+    
+    <form [formGroup]="patientForm" (ngSubmit)="onSubmit()">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="firstName">First Name *</label>
+          <input type="text" id="firstName" formControlName="firstName"
+            [class.error]="patientForm.get('firstName')?.invalid && patientForm.get('firstName')?.touched" />
+          <span class="error-message" *ngIf="patientForm.get('firstName')?.invalid && patientForm.get('firstName')?.touched">
+            {{ getErrorMessage('firstName') }}
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="lastName">Last Name *</label>
+          <input type="text" id="lastName" formControlName="lastName"
+            [class.error]="patientForm.get('lastName')?.invalid && patientForm.get('lastName')?.touched" />
+          <span class="error-message" *ngIf="patientForm.get('lastName')?.invalid && patientForm.get('lastName')?.touched">
+            {{ getErrorMessage('lastName') }}
+          </span>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="dateOfBirth">Date of Birth *</label>
+          <input type="date" id="dateOfBirth" formControlName="dateOfBirth"
+            [class.error]="patientForm.get('dateOfBirth')?.invalid && patientForm.get('dateOfBirth')?.touched" />
+          <span class="error-message" *ngIf="patientForm.get('dateOfBirth')?.invalid && patientForm.get('dateOfBirth')?.touched">
+            {{ getErrorMessage('dateOfBirth') }}
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="gender">Gender *</label>
+          <select id="gender" formControlName="gender"
+            [class.error]="patientForm.get('gender')?.invalid && patientForm.get('gender')?.touched">
+            <option value="">Select Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+          <span class="error-message" *ngIf="patientForm.get('gender')?.invalid && patientForm.get('gender')?.touched">
+            {{ getErrorMessage('gender') }}
+          </span>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="phone">Phone *</label>
+          <input type="tel" id="phone" formControlName="phone" placeholder="10 digits"
+            [class.error]="patientForm.get('phone')?.invalid && patientForm.get('phone')?.touched" />
+          <span class="error-message" *ngIf="patientForm.get('phone')?.invalid && patientForm.get('phone')?.touched">
+            {{ getErrorMessage('phone') }}
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email *</label>
+          <input type="email" id="email" formControlName="email"
+            [class.error]="patientForm.get('email')?.invalid && patientForm.get('email')?.touched" />
+          <span class="error-message" *ngIf="patientForm.get('email')?.invalid && patientForm.get('email')?.touched">
+            {{ getErrorMessage('email') }}
+          </span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="address">Address *</label>
+        <textarea id="address" formControlName="address" rows="3"
+          [class.error]="patientForm.get('address')?.invalid && patientForm.get('address')?.touched"></textarea>
+        <span class="error-message" *ngIf="patientForm.get('address')?.invalid && patientForm.get('address')?.touched">
+          {{ getErrorMessage('address') }}
+        </span>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="emergencyContact">Emergency Contact Name *</label>
+          <input type="text" id="emergencyContact" formControlName="emergencyContact"
+            [class.error]="patientForm.get('emergencyContact')?.invalid && patientForm.get('emergencyContact')?.touched" />
+          <span class="error-message" *ngIf="patientForm.get('emergencyContact')?.invalid && patientForm.get('emergencyContact')?.touched">
+            {{ getErrorMessage('emergencyContact') }}
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="emergencyPhone">Emergency Contact Phone *</label>
+          <input type="tel" id="emergencyPhone" formControlName="emergencyPhone" placeholder="10 digits"
+            [class.error]="patientForm.get('emergencyPhone')?.invalid && patientForm.get('emergencyPhone')?.touched" />
+          <span class="error-message" *ngIf="patientForm.get('emergencyPhone')?.invalid && patientForm.get('emergencyPhone')?.touched">
+            {{ getErrorMessage('emergencyPhone') }}
+          </span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="medicalHistory">Medical History</label>
+        <textarea id="medicalHistory" formControlName="medicalHistory" rows="3"
+          placeholder="Any relevant medical conditions or history"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="allergies">Allergies</label>
+        <input type="text" id="allergies" formControlName="allergies"
+          placeholder="List any known allergies" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="insuranceProvider">Insurance Provider</label>
+          <input type="text" id="insuranceProvider" formControlName="insuranceProvider" />
+        </div>
+
+        <div class="form-group">
+          <label for="insuranceNumber">Insurance Number</label>
+          <input type="text" id="insuranceNumber" formControlName="insuranceNumber" />
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-cancel" (click)="cancel()">Cancel</button>
+        <button type="submit" class="btn btn-submit" [disabled]="patientForm.invalid">
+          {{ isEditMode ? 'Update Patient' : 'Add Patient' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

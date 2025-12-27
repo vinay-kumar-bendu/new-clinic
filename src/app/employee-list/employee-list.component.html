@@ -1,0 +1,44 @@
+<div class="employee-list-container">
+  <div class="header">
+    <h1>Employee Management</h1>
+    <button class="btn btn-primary" (click)="addEmployee()">
+      <span>+</span> Add New Employee
+    </button>
+  </div>
+
+  <div class="table-container" *ngIf="employees.length > 0; else noEmployees">
+    <table class="employee-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Position</th>
+          <th>Department</th>
+          <th>Salary</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let employee of employees">
+          <td>{{ employee.id }}</td>
+          <td>{{ employee.name }}</td>
+          <td>{{ employee.email }}</td>
+          <td>{{ employee.position }}</td>
+          <td>{{ employee.department }}</td>
+          <td>${{ employee.salary | number:'1.2-2' }}</td>
+          <td class="actions">
+            <button class="btn btn-edit" (click)="editEmployee(employee.id)">Edit</button>
+            <button class="btn btn-delete" (click)="deleteEmployee(employee.id)">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ng-template #noEmployees>
+    <div class="empty-state">
+      <p>No employees found. Click "Add New Employee" to get started.</p>
+    </div>
+  </ng-template>
+</div>
