@@ -14,21 +14,16 @@ In your Render service settings, change the **Build Command** to:
 NODE_OPTIONS='--max-old-space-size=1024' npm install && npm run build:client
 ```
 
-### Step 2: Update Start Command (IMPORTANT!)
+### Step 2: Start Command (Optional)
 
-Change the **Start Command** from `npm run start` to:
-
+The **Start Command** can now be:
 ```bash
-npm run start:prod
+npm run start
 ```
 
-**OR**
+This now defaults to the production server (serves built static files). No need to change it in Render!
 
-```bash
-node server/server.js
-```
-
-This will serve the built static files instead of running the development server.
+**Note:** If Render still shows the old command, you can leave it as `npm run start` - it will now work correctly.
 
 ### Step 3: Environment Variables
 

@@ -19,14 +19,10 @@ NODE_OPTIONS='--max-old-space-size=1024' npm install && npm run build:client
 
 **Start Command:**
 ```bash
-npm run start:prod
+npm run start
 ```
 
-**OR**
-
-```bash
-node server/server.js
-```
+(Now defaults to production server - no need to specify `start:prod`)
 
 **Plan:** Starter ($7/month) or Standard ($25/month) - Free tier has 512MB which may not be enough
 
