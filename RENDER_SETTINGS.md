@@ -28,8 +28,11 @@ npm run start
 
 ### Environment Variables:
 
-Add these in Render's Environment tab:
+**⚠️ CRITICAL: You MUST set these in Render's Environment tab!**
 
+See **`RENDER_ENV_VARS.md`** for detailed step-by-step instructions.
+
+Quick reference:
 ```
 NODE_ENV=production
 PORT=3000
@@ -40,6 +43,8 @@ MYSQLDATABASE=railway
 MYSQLPORT=45417
 RAILWAY_ENVIRONMENT=true
 ```
+
+**Without these variables, you'll get: `connect ECONNREFUSED ::1:3306`**
 
 ## What This Does
 
