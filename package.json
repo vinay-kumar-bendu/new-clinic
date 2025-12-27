@@ -8,7 +8,7 @@
     "start:prod": "node server/server.js",
     "start:dev": "concurrently \"ng serve\" \"npm run start:server\"",
     "start:angular": "ng serve",
-    "build": "ng build",
+    "build": "npx ng build",
     "build:client": "ng build --configuration=client",
     "build:render": "NODE_OPTIONS='--max-old-space-size=1024' npm run build:client",
     "watch": "ng build --watch --configuration development",
