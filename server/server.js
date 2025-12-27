@@ -31,8 +31,35 @@ app.get('/api/health', (req, res) => {
 });
 
 // Serve static files from Angular build (production)
-const staticPath = path.join(__dirname, '../dist/todo/browser');
-if (require('fs').existsSync(staticPath)) {
+// Try multiple possible paths
+const fs = require('fs');
+const possiblePaths = [
+  path.join(__dirname, '../dist/todo/browser'),  // Client build with static mode
+  path.join(__dirname, '../dist/todo'),           // Default build output
+  path.join(__dirname, '../dist/browser'),        // Alternative path
+  path.join(__dirname, '../dist')                 // Fallback
+];
+
+let staticPath = null;
+let indexFile = 'index.html';
+for (const testPath of possiblePaths) {
+  // Try index.html first
+  let indexPath = path.join(testPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    staticPath = testPath;
+    indexFile = 'index.html';
+    break;
+  }
+  // Try index.csr.html (Client-Side Rendering)
+  indexPath = path.join(testPath, 'index.csr.html');
+  if (fs.existsSync(indexPath)) {
+    staticPath = testPath;
+    indexFile = 'index.csr.html';
+    break;
+  }
+}
+
+if (staticPath) {
   app.use(express.static(staticPath, {
     maxAge: '1y',
     index: false
@@ -44,13 +71,35 @@ if (require('fs').existsSync(staticPath)) {
     if (req.path.startsWith('/api')) {
       return res.status(404).json({ error: 'API endpoint not found' });
     }
-    res.sendFile(path.join(staticPath, 'index.html'));
+    const indexPath = path.join(staticPath, indexFile);
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(500).send('Frontend build not found. Please run "npm run build:client" first.');
+    }
   });
   
   console.log('📁 Serving static files from:', staticPath);
 } else {
   console.log('⚠️  Static files not found. Run "npm run build:client" first.');
-  console.log('   Expected path:', staticPath);
+  console.log('   Checked paths:');
+  possiblePaths.forEach(p => console.log('   -', p));
+  
+  // Still allow API to work even if frontend isn't built
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    res.status(503).send(`
+      <html>
+        <body>
+          <h1>Frontend Not Built</h1>
+          <p>Please run: <code>npm run build:client</code></p>
+          <p>API is available at: <a href="/api/health">/api/health</a></p>
+        </body>
+      </html>
+    `);
+  });
 }
 
 // Start server

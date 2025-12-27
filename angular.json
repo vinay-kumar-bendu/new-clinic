@@ -68,8 +68,6 @@
               "optimization": true,
               "sourceMap": false,
               "extractLicenses": false,
-              "vendorChunk": false,
-              "buildOptimizer": true,
               "outputMode": "static"
             }
           },
