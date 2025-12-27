@@ -1,8 +1,12 @@
 # Render Environment Variables Setup
 
-## ⚠️ IMPORTANT: Set These Environment Variables in Render
+## ⚠️ URGENT: Set These Environment Variables in Render
+
+**If you see "NOT SET" in your logs, you MUST add these environment variables in Render!**
 
 The database connection error occurs because the Railway MySQL environment variables are not set in Render.
+
+**👉 See `RENDER_ENV_SETUP_STEPS.md` for detailed step-by-step instructions with screenshots guidance.**
 
 ## Step-by-Step Instructions
 
