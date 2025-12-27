@@ -24,17 +24,27 @@ export class BillingComponent implements OnInit {
   patientSearchTerm: string = '';
   showPatientDropdown: boolean = false;
 
-  paymentForm = {
+  paymentForm: {
+    patientId: number;
+    treatmentId?: number;
+    appointmentId: number;
+    paymentDate: string;
+    amount: number;
+    paymentMethod: Payment['paymentMethod'];
+    paymentType: Payment['paymentType'];
+    description: string;
+    status: Payment['status'];
+  } = {
     patientId: 0,
-    treatmentId: 0,
     appointmentId: 0,
     paymentDate: new Date().toISOString().split('T')[0],
     amount: 0,
-    paymentMethod: 'Cash' as Payment['paymentMethod'],
-    paymentType: 'Full Payment' as Payment['paymentType'],
+    paymentMethod: 'Cash',
+    paymentType: 'Full Payment',
     description: '',
-    status: 'Paid' as Payment['status']
+    status: 'Paid'
   };
+
 
   constructor(
     private paymentService: PaymentService,
@@ -88,7 +98,6 @@ export class BillingComponent implements OnInit {
     this.showPatientDropdown = false;
     this.paymentForm = {
       patientId: this.selectedPatientId || 0,
-      treatmentId: 0,
       appointmentId: 0,
       paymentDate: new Date().toISOString().split('T')[0],
       amount: 0,
@@ -106,7 +115,7 @@ export class BillingComponent implements OnInit {
     const date = new Date(payment.paymentDate).toISOString().split('T')[0];
     this.paymentForm = {
       patientId: payment.patientId,
-      treatmentId: payment.treatmentId || 0,
+      ...(typeof payment.treatmentId === 'number' ? {treatmentId: payment.treatmentId} : {}),
       appointmentId: payment.appointmentId || 0,
       paymentDate: date,
       amount: payment.amount,
@@ -126,8 +135,8 @@ export class BillingComponent implements OnInit {
   savePayment(): void {
     // Make a copy of the payment form and fix treatmentId
     const formToSend = { ...this.paymentForm };
-    if (!formToSend.treatmentId || formToSend.treatmentId === 0) {
-      formToSend.treatmentId = null;
+    if (formToSend.treatmentId == null || formToSend.treatmentId === 0) {
+      delete formToSend.treatmentId;
     }
     const operation = this.editingPayment
       ? this.paymentService.updatePayment(this.editingPayment.id, formToSend)
@@ -194,7 +203,7 @@ export class BillingComponent implements OnInit {
   onPatientSelect(patientId: number): void {
     this.paymentForm.patientId = patientId;
     // Clear treatment selection when patient changes
-    this.paymentForm.treatmentId = null;
+    delete this.paymentForm.treatmentId;
     const selectedPatient = this.patients.find(p => p.id === patientId);
     if (selectedPatient) {
       this.patientSearchTerm = `${selectedPatient.firstName} ${selectedPatient.lastName}`;
