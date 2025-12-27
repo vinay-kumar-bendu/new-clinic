@@ -1,6 +1,6 @@
--- Create database if it doesn't exist
-CREATE DATABASE IF NOT EXISTS dental_clinic;
-USE dental_clinic;
+-- Database should already exist (Railway creates it automatically)
+-- CREATE DATABASE IF NOT EXISTS dental_clinic;
+-- USE dental_clinic;
 
 -- Patients table
 CREATE TABLE IF NOT EXISTS patients (
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS treatments (
   treatmentType ENUM('Cleaning', 'Filling', 'Root Canal', 'Extraction', 'Crown', 'Bridge', 'Implant', 'Orthodontic', 'Whitening', 'Other') NOT NULL,
   description TEXT,
   diagnosis TEXT NOT NULL,
-  procedure TEXT NOT NULL,
+  procedureDetails TEXT NOT NULL,
   notes TEXT,
   nextVisitDate DATE,
   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

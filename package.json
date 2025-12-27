@@ -10,7 +10,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:todo": "node dist/todo/server/server.mjs",
-    "init-db": "mysql -u root -p < server/init-db.sql"
+    "init-db": "mysql -u root -p < server/init-db.sql",
+    "init-railway-db": "node server/init-railway-db.js"
   },
   "private": true,
   "dependencies": {
