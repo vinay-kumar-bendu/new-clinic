@@ -40,17 +40,9 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.generateCalendar();
-    this.loadDashboardData();
     
-    // Subscribe to appointment changes to update calendar
-    this.appointmentService.appointments$.subscribe((appointments) => {
-      this.appointments = appointments;
-      this.loadDashboardData();
-    });
-  }
-
-  loadDashboardData(): void {
-    this.patientService.getAllPatients().subscribe({
+    // Subscribe to data from BehaviorSubjects (no API calls, uses cached data)
+    this.patientService.patients$.subscribe({
       next: (patients) => {
         this.totalPatients = patients.length;
         this.recentPatients = patients.slice(-5).reverse();
@@ -58,8 +50,9 @@ export class DashboardComponent implements OnInit {
       error: (error) => console.error('Error loading patients:', error)
     });
 
-    this.appointmentService.getAllAppointments().subscribe({
+    this.appointmentService.appointments$.subscribe({
       next: (appointments) => {
+        this.appointments = appointments;
         const today = new Date().toISOString().split('T')[0];
         this.todayAppointments = appointments
           .filter(a => a.appointmentDate === today && a.status === 'Scheduled')
@@ -77,7 +70,7 @@ export class DashboardComponent implements OnInit {
       error: (error) => console.error('Error loading appointments:', error)
     });
 
-    this.paymentService.getAllPayments().subscribe({
+    this.paymentService.payments$.subscribe({
       next: (payments) => {
         this.totalRevenue = payments
           .filter(p => p.status === 'Paid')

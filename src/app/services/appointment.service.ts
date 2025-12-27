@@ -37,6 +37,12 @@ export class AppointmentService {
   }
 
   getAllAppointments(): Observable<Appointment[]> {
+    // Use cached data from BehaviorSubject, only fetch if empty
+    const currentValue = this.appointmentsSubject.value;
+    if (currentValue.length > 0) {
+      return this.appointmentsSubject.asObservable();
+    }
+    // Fetch and update cache
     return this.http.get<Appointment[]>(this.apiUrl).pipe(
       map(appointments => this.enrichWithPatients(appointments)),
       tap(appointments => this.appointmentsSubject.next(appointments))

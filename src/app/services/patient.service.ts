@@ -26,6 +26,12 @@ export class PatientService {
   }
 
   getAllPatients(): Observable<Patient[]> {
+    // Use cached data from BehaviorSubject, only fetch if empty
+    const currentValue = this.patientsSubject.value;
+    if (currentValue.length > 0) {
+      return this.patientsSubject.asObservable();
+    }
+    // Fetch and update cache
     return this.http.get<Patient[]>(this.apiUrl).pipe(
       tap(patients => this.patientsSubject.next(patients))
     );

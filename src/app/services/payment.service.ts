@@ -37,6 +37,12 @@ export class PaymentService {
   }
 
   getAllPayments(): Observable<Payment[]> {
+    // Use cached data from BehaviorSubject, only fetch if empty
+    const currentValue = this.paymentsSubject.value;
+    if (currentValue.length > 0) {
+      return this.paymentsSubject.asObservable();
+    }
+    // Fetch and update cache
     return this.http.get<Payment[]>(this.apiUrl).pipe(
       map(payments => this.enrichWithRelations(payments)),
       tap(payments => this.paymentsSubject.next(payments))

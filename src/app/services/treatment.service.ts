@@ -38,6 +38,12 @@ export class TreatmentService {
   }
 
   getAllTreatments(): Observable<Treatment[]> {
+    // Use cached data from BehaviorSubject, only fetch if empty
+    const currentValue = this.treatmentsSubject.value;
+    if (currentValue.length > 0) {
+      return this.treatmentsSubject.asObservable();
+    }
+    // Fetch and update cache
     return this.http.get<Treatment[]>(this.apiUrl).pipe(
       map(treatments => this.enrichWithPatients(treatments)),
       tap(treatments => this.treatmentsSubject.next(treatments))
