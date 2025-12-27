@@ -6,7 +6,14 @@
 
   <div class="date-selector">
     <label>Select Date:</label>
-    <input type="date" [(ngModel)]="selectedDate" />
+    <input type="date" [(ngModel)]="selectedDate" (ngModelChange)="onDateChange()" />
+    <button class="btn btn-secondary" (click)="goToToday()">Today</button>
+    <span class="appointment-count" *ngIf="appointmentsForDate.length > 0">
+      ({{ appointmentsForDate.length }} appointment{{ appointmentsForDate.length !== 1 ? 's' : '' }})
+    </span>
+    <span class="appointment-count" *ngIf="appointments.length > 0 && appointmentsForDate.length === 0" style="color: #999;">
+      (No appointments for this date)
+    </span>
   </div>
 
   <div class="appointments-list" *ngIf="appointmentsForDate.length > 0; else noAppointments">
@@ -14,7 +21,7 @@
       <div class="appointment-info">
         <div class="time-badge">{{ appointment.appointmentTime }}</div>
         <div class="details">
-          <h3>{{ getPatientName(appointment.patientId) }}</h3>
+          <h3>{{ getPatientName(appointment.patientId, appointment) }}</h3>
           <p><strong>Type:</strong> {{ appointment.type }}</p>
           <p><strong>Duration:</strong> {{ appointment.duration }} minutes</p>
           <p><strong>Status:</strong> 
@@ -42,12 +49,60 @@
       <form (ngSubmit)="saveAppointment()">
         <div class="form-group">
           <label>Patient *</label>
-          <select [(ngModel)]="appointmentForm.patientId" name="patientId" required>
-            <option value="0">Select Patient</option>
-            <option *ngFor="let patient of patients" [value]="patient.id">
-              {{ patient.firstName }} {{ patient.lastName }}
-            </option>
-          </select>
+          <div class="patient-search-container">
+            <input 
+              type="text" 
+              [(ngModel)]="patientSearchTerm" 
+              (focus)="onPatientSearchFocus()"
+              (blur)="onPatientSearchBlur()"
+              (input)="onPatientSearchInput()"
+              placeholder="Search patient by name, email, or phone..."
+              class="patient-search-input"
+              name="patientSearch"
+            />
+            <div class="patient-dropdown" *ngIf="showPatientDropdown && patients.length > 0">
+              <div 
+                *ngIf="filteredPatients.length === 0 && patientSearchTerm.trim()" 
+                class="patient-dropdown-item no-results"
+              >
+                No patients found
+              </div>
+              <div 
+                *ngIf="filteredPatients.length === 0 && !patientSearchTerm.trim()" 
+                class="patient-dropdown-item no-results"
+              >
+                Start typing to search patients
+              </div>
+              <div 
+                *ngFor="let patient of filteredPatients" 
+                class="patient-dropdown-item"
+                [class.selected]="appointmentForm.patientId === patient.id"
+                (mousedown)="onPatientSelect(patient.id); $event.preventDefault()"
+              >
+                <div class="patient-name">{{ patient.firstName }} {{ patient.lastName }}</div>
+                <div class="patient-details" *ngIf="patient.email || patient.phone">
+                  <span *ngIf="patient.email">{{ patient.email }}</span>
+                  <span *ngIf="patient.phone && patient.email"> • </span>
+                  <span *ngIf="patient.phone">{{ patient.phone }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="selected-patient" *ngIf="appointmentForm.patientId > 0">
+            <span class="selected-label">Selected:</span>
+            <span class="selected-name">{{ getPatientName(appointmentForm.patientId) }}</span>
+            <button type="button" class="btn-clear" (click)="appointmentForm.patientId = 0; patientSearchTerm = ''; showPatientDropdown = false" (mousedown)="$event.preventDefault()">Clear</button>
+          </div>
+          <input 
+            type="hidden" 
+            [(ngModel)]="appointmentForm.patientId" 
+            name="patientId" 
+            required 
+            #patientIdInput="ngModel"
+          />
+          <div class="error-message" *ngIf="patientIdInput.invalid && patientIdInput.touched">
+            Please select a patient
+          </div>
         </div>
 
         <div class="form-row">

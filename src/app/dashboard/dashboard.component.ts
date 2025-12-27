@@ -37,6 +37,9 @@ export class DashboardComponent implements OnInit {
   ) {}
 
   appointments: Appointment[] = [];
+  selectedCalendarDate: Date | null = null;
+  showAppointmentModal: boolean = false;
+  appointmentsForSelectedDate: Appointment[] = [];
 
   ngOnInit(): void {
     this.generateCalendar();
@@ -53,19 +56,48 @@ export class DashboardComponent implements OnInit {
     this.appointmentService.appointments$.subscribe({
       next: (appointments) => {
         this.appointments = appointments;
-        const today = new Date().toISOString().split('T')[0];
+        
+        // Get today's date in YYYY-MM-DD format
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = today.toISOString().split('T')[0];
+        
+        // Normalize appointment dates and filter for today
         this.todayAppointments = appointments
-          .filter(a => a.appointmentDate === today && a.status === 'Scheduled')
-          .slice(0, 5);
+          .filter(a => {
+            if (!a.appointmentDate || a.status !== 'Scheduled') return false;
+            // Normalize date format - handle both ISO strings and date strings
+            const aptDate = new Date(a.appointmentDate);
+            aptDate.setHours(0, 0, 0, 0);
+            const aptDateStr = aptDate.toISOString().split('T')[0];
+            return aptDateStr === todayStr;
+          })
+          .slice(0, 5)
+          .sort((a, b) => a.appointmentTime.localeCompare(b.appointmentTime));
 
+        // Filter upcoming appointments (next 7 days)
         const futureDate = new Date();
         futureDate.setDate(futureDate.getDate() + 7);
+        futureDate.setHours(23, 59, 59, 999);
+        
         this.upcomingAppointments = appointments
           .filter(a => {
+            if (!a.appointmentDate || a.status !== 'Scheduled') return false;
             const aptDate = new Date(a.appointmentDate);
-            return aptDate > new Date() && aptDate <= futureDate && a.status === 'Scheduled';
+            aptDate.setHours(0, 0, 0, 0);
+            const todayDate = new Date();
+            todayDate.setHours(0, 0, 0, 0);
+            return aptDate > todayDate && aptDate <= futureDate;
           })
-          .slice(0, 5);
+          .slice(0, 5)
+          .sort((a, b) => {
+            const dateCompare = new Date(a.appointmentDate).getTime() - new Date(b.appointmentDate).getTime();
+            if (dateCompare !== 0) return dateCompare;
+            return a.appointmentTime.localeCompare(b.appointmentTime);
+          });
+        
+        // Regenerate calendar to show updated appointments
+        this.generateCalendar();
       },
       error: (error) => console.error('Error loading appointments:', error)
     });
@@ -80,10 +112,17 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  getPatientName(patientId: number): string {
-    // This is used in template, so we'll need to handle it differently
-    // For now, return a placeholder - the actual name should come from the appointment data
-    return 'Loading...';
+  getPatientName(patientId: number, appointment?: Appointment): string {
+    // First try to get from appointment.patient if available
+    if (appointment?.patient) {
+      return `${appointment.patient.firstName} ${appointment.patient.lastName}`;
+    }
+    // Fallback: search in appointments for patient data
+    const apt = this.appointments.find(a => a.patientId === patientId && a.patient);
+    if (apt?.patient) {
+      return `${apt.patient.firstName} ${apt.patient.lastName}`;
+    }
+    return 'Unknown Patient';
   }
 
   navigateTo(route: string): void {
@@ -120,13 +159,68 @@ export class DashboardComponent implements OnInit {
   hasAppointment(date: Date | null): boolean {
     if (!date) return false;
     const dateStr = date.toISOString().split('T')[0];
-    return this.appointments.some(a => a.appointmentDate === dateStr && a.status === 'Scheduled');
+    return this.appointments.some(a => {
+      if (!a.appointmentDate) return false;
+      // Normalize appointment date for comparison - handle ISO format
+      const aptDate = new Date(a.appointmentDate);
+      aptDate.setHours(0, 0, 0, 0);
+      const aptDateStr = aptDate.toISOString().split('T')[0];
+      return aptDateStr === dateStr;
+    });
   }
 
-  getAppointmentCount(date: Date | null): number {
-    if (!date) return 0;
+  getAppointmentsForDate(date: Date | null): Appointment[] {
+    if (!date) return [];
     const dateStr = date.toISOString().split('T')[0];
-    return this.appointments.filter(a => a.appointmentDate === dateStr && a.status === 'Scheduled').length;
+    return this.appointments.filter(a => {
+      if (!a.appointmentDate) return false;
+      // Normalize appointment date for comparison - handle ISO format
+      const aptDate = new Date(a.appointmentDate);
+      aptDate.setHours(0, 0, 0, 0);
+      const aptDateStr = aptDate.toISOString().split('T')[0];
+      return aptDateStr === dateStr;
+    });
+  }
+
+  getAppointmentCountForDate(date: Date | null): number {
+    if (!date) return 0;
+    return this.getAppointmentsForDate(date).length;
+  }
+
+  onCalendarDateClick(date: Date | null): void {
+    if (!date) {
+      console.log('Date is null, not opening modal');
+      return;
+    }
+    
+    console.log('Date clicked:', date);
+    this.selectedCalendarDate = date;
+    this.appointmentsForSelectedDate = this.getAppointmentsForDate(date);
+    console.log('Appointments for date:', this.appointmentsForSelectedDate.length);
+    console.log('Appointments:', this.appointmentsForSelectedDate);
+    this.showAppointmentModal = true;
+    console.log('Modal should be open:', this.showAppointmentModal);
+    
+    // Force change detection
+    setTimeout(() => {
+      console.log('Modal state after timeout:', this.showAppointmentModal);
+    }, 100);
+  }
+
+  closeAppointmentModal(): void {
+    this.showAppointmentModal = false;
+    this.selectedCalendarDate = null;
+    this.appointmentsForSelectedDate = [];
+  }
+
+  getFormattedDate(date: Date | null): string {
+    if (!date) return '';
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
   }
 
   previousMonth(): void {
@@ -152,5 +246,11 @@ export class DashboardComponent implements OnInit {
     this.currentMonth = this.currentDate.getMonth();
     this.currentYear = this.currentDate.getFullYear();
     this.generateCalendar();
+  }
+
+  formatTime(time: string): string {
+    if (!time) return '';
+    // Convert HH:mm:ss to HH:mm format for display
+    return time.substring(0, 5);
   }
 }

@@ -6,6 +6,7 @@ import { PatientService } from '../services/patient.service';
 import { TreatmentService } from '../services/treatment.service';
 import { Payment, Billing } from '../models/payment.model';
 import { Patient } from '../models/patient.model';
+import { Treatment } from '../models/treatment.model';
 
 @Component({
   selector: 'app-billing',
@@ -16,9 +17,12 @@ import { Patient } from '../models/patient.model';
 export class BillingComponent implements OnInit {
   payments: Payment[] = [];
   patients: Patient[] = [];
+  treatments: Treatment[] = [];
   selectedPatientId: number = 0;
   showForm = false;
   editingPayment: Payment | null = null;
+  patientSearchTerm: string = '';
+  showPatientDropdown: boolean = false;
 
   paymentForm = {
     patientId: 0,
@@ -54,6 +58,11 @@ export class BillingComponent implements OnInit {
       next: (patients) => this.patients = patients,
       error: (error) => console.error('Error loading patients:', error)
     });
+    // Load all treatments at start (could also optimize by patient)
+    this.treatmentService.getAllTreatments().subscribe({
+      next: (treatments) => this.treatments = treatments,
+      error: (err) => console.error('Error loading treatments:', err)
+    });
   }
 
   get filteredPayments(): Payment[] {
@@ -75,6 +84,8 @@ export class BillingComponent implements OnInit {
 
   openAddForm(): void {
     this.editingPayment = null;
+    this.patientSearchTerm = '';
+    this.showPatientDropdown = false;
     this.paymentForm = {
       patientId: this.selectedPatientId || 0,
       treatmentId: 0,
@@ -91,6 +102,7 @@ export class BillingComponent implements OnInit {
 
   openEditForm(payment: Payment): void {
     this.editingPayment = payment;
+    this.showPatientDropdown = false;
     const date = new Date(payment.paymentDate).toISOString().split('T')[0];
     this.paymentForm = {
       patientId: payment.patientId,
@@ -103,13 +115,23 @@ export class BillingComponent implements OnInit {
       description: payment.description,
       status: payment.status
     };
+    
+    // Set search term to selected patient name
+    const selectedPatient = this.patients.find(p => p.id === payment.patientId);
+    this.patientSearchTerm = selectedPatient ? `${selectedPatient.firstName} ${selectedPatient.lastName}` : '';
+    
     this.showForm = true;
   }
 
   savePayment(): void {
+    // Make a copy of the payment form and fix treatmentId
+    const formToSend = { ...this.paymentForm };
+    if (!formToSend.treatmentId || formToSend.treatmentId === 0) {
+      formToSend.treatmentId = null;
+    }
     const operation = this.editingPayment
-      ? this.paymentService.updatePayment(this.editingPayment.id, this.paymentForm)
-      : this.paymentService.addPayment(this.paymentForm);
+      ? this.paymentService.updatePayment(this.editingPayment.id, formToSend)
+      : this.paymentService.addPayment(formToSend);
     
     operation.subscribe({
       next: () => {
@@ -133,6 +155,56 @@ export class BillingComponent implements OnInit {
         }
       });
     }
+  }
+
+  get filteredPatients(): Patient[] {
+    if (!this.patientSearchTerm.trim()) {
+      return this.patients;
+    }
+    const searchLower = this.patientSearchTerm.toLowerCase().trim();
+    return this.patients.filter(patient => 
+      patient.firstName.toLowerCase().includes(searchLower) ||
+      patient.lastName.toLowerCase().includes(searchLower) ||
+      `${patient.firstName} ${patient.lastName}`.toLowerCase().includes(searchLower) ||
+      (patient.email && patient.email.toLowerCase().includes(searchLower)) ||
+      (patient.phone && patient.phone.includes(searchLower))
+    );
+  }
+
+  onPatientSearchFocus(): void {
+    if (this.patients.length > 0) {
+      this.showPatientDropdown = true;
+    }
+  }
+
+  onPatientSearchBlur(): void {
+    setTimeout(() => {
+      this.showPatientDropdown = false;
+    }, 150);
+  }
+
+  onPatientSearchInput(): void {
+    this.showPatientDropdown = true;
+    if (this.patientSearchTerm.trim() && 
+        !this.filteredPatients.find(p => p.id === this.paymentForm.patientId)) {
+      this.paymentForm.patientId = 0;
+    }
+  }
+
+  onPatientSelect(patientId: number): void {
+    this.paymentForm.patientId = patientId;
+    // Clear treatment selection when patient changes
+    this.paymentForm.treatmentId = null;
+    const selectedPatient = this.patients.find(p => p.id === patientId);
+    if (selectedPatient) {
+      this.patientSearchTerm = `${selectedPatient.firstName} ${selectedPatient.lastName}`;
+    }
+    this.showPatientDropdown = false;
+  }
+
+  get patientTreatments(): Treatment[] {
+    if (!this.paymentForm.patientId) return [];
+    return this.treatments.filter(t => t.patientId === this.paymentForm.patientId);
   }
 
   getPatientName(patientId: number): string {
@@ -161,5 +233,7 @@ export class BillingComponent implements OnInit {
   cancelForm(): void {
     this.showForm = false;
     this.editingPayment = null;
+    this.patientSearchTerm = '';
+    this.showPatientDropdown = false;
   }
 }

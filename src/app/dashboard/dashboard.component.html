@@ -56,11 +56,13 @@
             *ngFor="let day of calendarDays"
             [class.today]="isToday(day)"
             [class.has-appointment]="hasAppointment(day)"
-            [class.empty]="day === null">
+            [class.empty]="day === null"
+            (click)="onCalendarDateClick(day)"
+            [style.cursor]="day ? 'pointer' : 'default'">
             <span class="day-number" *ngIf="day">{{ day.getDate() }}</span>
-            <span class="appointment-badge" *ngIf="day && hasAppointment(day)">
-              {{ getAppointmentCount(day) }}
-            </span>
+            <div class="appointment-count-badge" *ngIf="day && hasAppointment(day)">
+              {{ getAppointmentCountForDate(day) }}
+            </div>
           </div>
         </div>
       </div>
@@ -71,7 +73,7 @@
           <div class="appointment-item" *ngFor="let appointment of todayAppointments">
             <div class="appointment-time">{{ appointment.appointmentTime }}</div>
             <div class="appointment-details">
-              <strong>{{ getPatientName(appointment.patientId) }}</strong>
+              <strong>{{ getPatientName(appointment.patientId, appointment) }}</strong>
               <span>{{ appointment.type }}</span>
             </div>
           </div>
@@ -89,7 +91,7 @@
           <div class="appointment-date">{{ appointment.appointmentDate | date:'shortDate' }}</div>
           <div class="appointment-time">{{ appointment.appointmentTime }}</div>
           <div class="appointment-details">
-            <strong>{{ getPatientName(appointment.patientId) }}</strong>
+            <strong>{{ getPatientName(appointment.patientId, appointment) }}</strong>
             <span>{{ appointment.type }}</span>
           </div>
         </div>
@@ -115,5 +117,44 @@
     <ng-template #noRecentPatients>
       <p class="empty-message">No patients yet.</p>
     </ng-template>
+  </div>
+
+  <!-- Appointment Modal -->
+  <div class="modal" *ngIf="showAppointmentModal" (click)="closeAppointmentModal()" style="display: flex;">
+    <div class="modal-content appointment-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Appointments for {{ getFormattedDate(selectedCalendarDate) }}</h2>
+        <button class="close-btn" (click)="closeAppointmentModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="appointmentsForSelectedDate.length === 0" class="empty-appointments">
+          <p>No appointments scheduled for this date.</p>
+        </div>
+        <div *ngIf="appointmentsForSelectedDate.length > 0" class="appointments-list-modal">
+          <div class="appointment-item-modal" *ngFor="let appointment of appointmentsForSelectedDate">
+            <div class="appointment-time-modal">{{ formatTime(appointment.appointmentTime) }}</div>
+            <div class="appointment-details-modal">
+              <div class="patient-name-modal">
+                <strong>{{ getPatientName(appointment.patientId, appointment) }}</strong>
+              </div>
+              <div class="appointment-info-modal">
+                <span class="appointment-type">{{ appointment.type }}</span>
+                <span class="appointment-duration">{{ appointment.duration }} min</span>
+              </div>
+            </div>
+            <div class="appointment-status-modal">
+              <span 
+                class="status-badge"
+                [class.status-scheduled]="appointment.status === 'Scheduled'"
+                [class.status-completed]="appointment.status === 'Completed'"
+                [class.status-cancelled]="appointment.status === 'Cancelled'"
+                [class.status-no-show]="appointment.status === 'No Show'">
+                {{ appointment.status }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

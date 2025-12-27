@@ -18,6 +18,8 @@ export class TreatmentsComponent implements OnInit {
   selectedPatientId: number = 0;
   showForm = false;
   editingTreatment: Treatment | null = null;
+  patientSearchTerm: string = '';
+  showPatientDropdown: boolean = false;
 
   treatmentForm = {
     patientId: 0,
@@ -60,8 +62,48 @@ export class TreatmentsComponent implements OnInit {
     return this.treatments.filter(t => t.patientId === this.selectedPatientId);
   }
 
+  get filteredPatients(): Patient[] {
+    if (!this.patientSearchTerm.trim()) {
+      return this.patients;
+    }
+    const searchLower = this.patientSearchTerm.toLowerCase().trim();
+    return this.patients.filter(patient => 
+      patient.firstName.toLowerCase().includes(searchLower) ||
+      patient.lastName.toLowerCase().includes(searchLower) ||
+      `${patient.firstName} ${patient.lastName}`.toLowerCase().includes(searchLower) ||
+      (patient.email && patient.email.toLowerCase().includes(searchLower)) ||
+      (patient.phone && patient.phone.includes(searchLower))
+    );
+  }
+
+  onPatientSearchFocus(): void {
+    // Only show dropdown if we have patients to show
+    if (this.patients.length > 0) {
+      this.showPatientDropdown = true;
+    }
+  }
+
+  onPatientSearchBlur(): void {
+    // Delay hiding dropdown to allow click events to fire
+    setTimeout(() => {
+      this.showPatientDropdown = false;
+    }, 150);
+  }
+
+  onPatientSearchInput(): void {
+    // Show dropdown when typing
+    this.showPatientDropdown = true;
+    // Clear selection if current search doesn't match selected patient
+    if (this.patientSearchTerm.trim() && 
+        !this.filteredPatients.find(p => p.id === this.treatmentForm.patientId)) {
+      this.treatmentForm.patientId = 0;
+    }
+  }
+
   openAddForm(): void {
     this.editingTreatment = null;
+    this.patientSearchTerm = '';
+    this.showPatientDropdown = false;
     this.treatmentForm = {
       patientId: this.selectedPatientId || 0,
       appointmentId: 0,
@@ -93,6 +135,9 @@ export class TreatmentsComponent implements OnInit {
       notes: treatment.notes,
       nextVisitDate: nextVisit
     };
+    // Set search term to selected patient name
+    const selectedPatient = this.patients.find(p => p.id === treatment.patientId);
+    this.patientSearchTerm = selectedPatient ? `${selectedPatient.firstName} ${selectedPatient.lastName}` : '';
     this.showForm = true;
   }
 
@@ -133,5 +178,17 @@ export class TreatmentsComponent implements OnInit {
   cancelForm(): void {
     this.showForm = false;
     this.editingTreatment = null;
+    this.patientSearchTerm = '';
+    this.showPatientDropdown = false;
+  }
+
+  onPatientSelect(patientId: number): void {
+    this.treatmentForm.patientId = patientId;
+    const selectedPatient = this.patients.find(p => p.id === patientId);
+    if (selectedPatient) {
+      this.patientSearchTerm = `${selectedPatient.firstName} ${selectedPatient.lastName}`;
+    }
+    // Close dropdown immediately
+    this.showPatientDropdown = false;
   }
 }

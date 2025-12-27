@@ -18,6 +18,8 @@ export class AppointmentsComponent implements OnInit {
   selectedDate: string = new Date().toISOString().split('T')[0];
   showForm = false;
   editingAppointment: Appointment | null = null;
+  patientSearchTerm: string = '';
+  showPatientDropdown: boolean = false;
 
   appointmentForm = {
     patientId: 0,
@@ -53,11 +55,41 @@ export class AppointmentsComponent implements OnInit {
   }
 
   get appointmentsForDate(): Appointment[] {
-    return this.appointments.filter(a => a.appointmentDate === this.selectedDate);
+    if (!this.selectedDate) return [];
+    
+    // Parse selected date using local timezone
+    const selectedDate = new Date(this.selectedDate + 'T00:00:00');
+    const selectedYear = selectedDate.getFullYear();
+    const selectedMonth = selectedDate.getMonth();
+    const selectedDay = selectedDate.getDate();
+    
+    return this.appointments
+      .filter(a => {
+        if (!a.appointmentDate) return false;
+        
+        // Parse appointment date and compare using local date components
+        const aptDate = new Date(a.appointmentDate);
+        const aptYear = aptDate.getFullYear();
+        const aptMonth = aptDate.getMonth();
+        const aptDay = aptDate.getDate();
+        
+        // Compare year, month, and day (ignore time and timezone)
+        return aptYear === selectedYear && 
+               aptMonth === selectedMonth && 
+               aptDay === selectedDay;
+      })
+      .sort((a, b) => {
+        // Sort by time
+        const timeA = a.appointmentTime || '00:00:00';
+        const timeB = b.appointmentTime || '00:00:00';
+        return timeA.localeCompare(timeB);
+      });
   }
 
   openAddForm(): void {
     this.editingAppointment = null;
+    this.patientSearchTerm = '';
+    this.showPatientDropdown = false;
     this.appointmentForm = {
       patientId: 0,
       appointmentDate: this.selectedDate,
@@ -72,27 +104,51 @@ export class AppointmentsComponent implements OnInit {
 
   openEditForm(appointment: Appointment): void {
     this.editingAppointment = appointment;
+    
+    // Normalize appointment date for date input (YYYY-MM-DD format)
+    // Use local date components to avoid timezone issues
+    let aptDate = '';
+    if (appointment.appointmentDate) {
+      const date = new Date(appointment.appointmentDate);
+      // Use local date components to avoid timezone shift
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      aptDate = `${year}-${month}-${day}`;
+    }
+    
+    // Normalize appointment time for time input (HH:mm format)
+    const aptTime = appointment.appointmentTime ? appointment.appointmentTime.substring(0, 5) : '';
+    
     this.appointmentForm = {
       patientId: appointment.patientId,
-      appointmentDate: appointment.appointmentDate,
-      appointmentTime: appointment.appointmentTime,
+      appointmentDate: aptDate,
+      appointmentTime: aptTime,
       duration: appointment.duration,
       type: appointment.type,
       status: appointment.status,
-      notes: appointment.notes
+      notes: appointment.notes || ''
     };
     this.showForm = true;
   }
 
   saveAppointment(): void {
+    // Ensure date is in YYYY-MM-DD format without timezone conversion
+    const formData = {
+      ...this.appointmentForm,
+      appointmentDate: this.appointmentForm.appointmentDate // Keep as YYYY-MM-DD string
+    };
+    
     const operation = this.editingAppointment
-      ? this.appointmentService.updateAppointment(this.editingAppointment.id, this.appointmentForm)
-      : this.appointmentService.addAppointment(this.appointmentForm);
+      ? this.appointmentService.updateAppointment(this.editingAppointment.id, formData)
+      : this.appointmentService.addAppointment(formData);
     
     operation.subscribe({
       next: () => {
         this.showForm = false;
         this.editingAppointment = null;
+        // Reload data to get updated appointments
+        this.loadData();
       },
       error: (error) => {
         console.error('Error saving appointment:', error);
@@ -113,7 +169,55 @@ export class AppointmentsComponent implements OnInit {
     }
   }
 
-  getPatientName(patientId: number): string {
+  get filteredPatients(): Patient[] {
+    if (!this.patientSearchTerm.trim()) {
+      return this.patients;
+    }
+    const searchLower = this.patientSearchTerm.toLowerCase().trim();
+    return this.patients.filter(patient => 
+      patient.firstName.toLowerCase().includes(searchLower) ||
+      patient.lastName.toLowerCase().includes(searchLower) ||
+      `${patient.firstName} ${patient.lastName}`.toLowerCase().includes(searchLower) ||
+      (patient.email && patient.email.toLowerCase().includes(searchLower)) ||
+      (patient.phone && patient.phone.includes(searchLower))
+    );
+  }
+
+  onPatientSearchFocus(): void {
+    if (this.patients.length > 0) {
+      this.showPatientDropdown = true;
+    }
+  }
+
+  onPatientSearchBlur(): void {
+    setTimeout(() => {
+      this.showPatientDropdown = false;
+    }, 150);
+  }
+
+  onPatientSearchInput(): void {
+    this.showPatientDropdown = true;
+    if (this.patientSearchTerm.trim() && 
+        !this.filteredPatients.find(p => p.id === this.appointmentForm.patientId)) {
+      this.appointmentForm.patientId = 0;
+    }
+  }
+
+  onPatientSelect(patientId: number): void {
+    this.appointmentForm.patientId = patientId;
+    const selectedPatient = this.patients.find(p => p.id === patientId);
+    if (selectedPatient) {
+      this.patientSearchTerm = `${selectedPatient.firstName} ${selectedPatient.lastName}`;
+    }
+    this.showPatientDropdown = false;
+  }
+
+  getPatientName(patientId: number, appointment?: Appointment): string {
+    // First try to get from appointment.patient if available
+    if (appointment?.patient) {
+      return `${appointment.patient.firstName} ${appointment.patient.lastName}`;
+    }
+    // Fallback: search in patients array
     const patient = this.patients.find(p => p.id === patientId);
     return patient ? `${patient.firstName} ${patient.lastName}` : 'Unknown';
   }
@@ -121,5 +225,24 @@ export class AppointmentsComponent implements OnInit {
   cancelForm(): void {
     this.showForm = false;
     this.editingAppointment = null;
+    this.patientSearchTerm = '';
+    this.showPatientDropdown = false;
+  }
+
+  onDateChange(): void {
+    // Force change detection when date changes
+    // This ensures appointmentsForDate getter is re-evaluated
+    console.log('Date changed to:', this.selectedDate);
+  }
+
+  goToToday(): void {
+    this.selectedDate = new Date().toISOString().split('T')[0];
+    this.onDateChange();
+  }
+
+  formatTime(time: string): string {
+    if (!time) return '';
+    // Convert HH:mm:ss to HH:mm format for display
+    return time.substring(0, 5);
   }
 }

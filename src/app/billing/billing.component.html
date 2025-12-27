@@ -66,15 +66,72 @@
       <form (ngSubmit)="savePayment()">
         <div class="form-group">
           <label>Patient *</label>
-          <select [(ngModel)]="paymentForm.patientId" name="patientId" required>
-            <option value="0">Select Patient</option>
-            <option *ngFor="let patient of patients" [value]="patient.id">
-              {{ patient.firstName }} {{ patient.lastName }}
-            </option>
-          </select>
+          <div class="patient-search-container">
+            <input 
+              type="text" 
+              [(ngModel)]="patientSearchTerm" 
+              (focus)="onPatientSearchFocus()"
+              (blur)="onPatientSearchBlur()"
+              (input)="onPatientSearchInput()"
+              placeholder="Search patient by name, email, or phone..."
+              class="patient-search-input"
+              name="patientSearch"
+            />
+            <div class="patient-dropdown" *ngIf="showPatientDropdown && patients.length > 0">
+              <div 
+                *ngIf="filteredPatients.length === 0 && patientSearchTerm.trim()" 
+                class="patient-dropdown-item no-results"
+              >
+                No patients found
+              </div>
+              <div 
+                *ngIf="filteredPatients.length === 0 && !patientSearchTerm.trim()" 
+                class="patient-dropdown-item no-results"
+              >
+                Start typing to search patients
+              </div>
+              <div 
+                *ngFor="let patient of filteredPatients" 
+                class="patient-dropdown-item"
+                [class.selected]="paymentForm.patientId === patient.id"
+                (mousedown)="onPatientSelect(patient.id); $event.preventDefault()"
+              >
+                <div class="patient-name">{{ patient.firstName }} {{ patient.lastName }}</div>
+                <div class="patient-details" *ngIf="patient.email || patient.phone">
+                  <span *ngIf="patient.email">{{ patient.email }}</span>
+                  <span *ngIf="patient.phone && patient.email"> • </span>
+                  <span *ngIf="patient.phone">{{ patient.phone }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="selected-patient" *ngIf="paymentForm.patientId > 0">
+            <span class="selected-label">Selected:</span>
+            <span class="selected-name">{{ getPatientName(paymentForm.patientId) }}</span>
+            <button type="button" class="btn-clear" (click)="paymentForm.patientId = 0; patientSearchTerm = ''; showPatientDropdown = false" (mousedown)="$event.preventDefault()">Clear</button>
+          </div>
+          <input 
+            type="hidden" 
+            [(ngModel)]="paymentForm.patientId" 
+            name="patientId" 
+            required 
+            #patientIdInput="ngModel"
+          />
+          <div class="error-message" *ngIf="patientIdInput.invalid && patientIdInput.touched">
+            Please select a patient
+          </div>
         </div>
 
         <div class="form-row">
+          <div class="form-group">
+            <label>Treatment</label>
+            <select [(ngModel)]="paymentForm.treatmentId" name="treatmentId">
+              <option [ngValue]="null">None</option>
+              <option *ngFor="let treatment of patientTreatments" [ngValue]="treatment.id">
+                {{ treatment.treatmentType }} ({{ treatment.treatmentDate | date:'shortDate' }})
+              </option>
+            </select>
+          </div>
           <div class="form-group">
             <label>Payment Date *</label>
             <input type="date" [(ngModel)]="paymentForm.paymentDate" name="paymentDate" required />

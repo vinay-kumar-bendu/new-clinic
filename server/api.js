@@ -97,10 +97,27 @@ router.get('/api/appointments', async (req, res) => {
 router.post('/api/appointments', async (req, res) => {
   try {
     const { patientId, appointmentDate, appointmentTime, duration, type, status, notes } = req.body;
+    
+    // Validate patientId - must be a valid number and exist in patients table
+    if (!patientId || patientId === 0 || patientId === '0' || patientId === null || patientId === undefined) {
+      return res.status(400).json({ error: 'Patient ID is required and must be valid' });
+    }
+    
+    // Check if patient exists
+    const [patientCheck] = await pool.execute('SELECT id FROM patients WHERE id = ?', [patientId]);
+    if (patientCheck.length === 0) {
+      return res.status(400).json({ error: `Patient with ID ${patientId} does not exist` });
+    }
+    
+    // Validate required fields
+    if (!appointmentDate || !appointmentTime || !type) {
+      return res.status(400).json({ error: 'Appointment date, time, and type are required' });
+    }
+    
     const [result] = await pool.execute(
       `INSERT INTO appointments (patientId, appointmentDate, appointmentTime, duration, type, status, notes) 
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [patientId, appointmentDate, appointmentTime, duration || 30, type, status || 'Scheduled', notes]
+      [patientId, appointmentDate, appointmentTime, duration || 30, type, status || 'Scheduled', notes || null]
     );
     const [newAppointment] = await pool.execute(
       `SELECT a.*, p.firstName, p.lastName FROM appointments a 
@@ -109,17 +126,49 @@ router.post('/api/appointments', async (req, res) => {
     );
     res.status(201).json(newAppointment[0]);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('❌ Error creating appointment:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      sqlState: error.sqlState,
+      sqlMessage: error.sqlMessage
+    });
+    res.status(500).json({ 
+      error: error.message,
+      code: error.code,
+      details: 'Check server logs for more information'
+    });
   }
 });
 
 router.put('/api/appointments/:id', async (req, res) => {
   try {
     const { patientId, appointmentDate, appointmentTime, duration, type, status, notes } = req.body;
+    
+    // Validate patientId - must be a valid number and exist in patients table
+    if (!patientId || patientId === 0 || patientId === '0' || patientId === null || patientId === undefined) {
+      return res.status(400).json({ error: 'Patient ID is required and must be valid' });
+    }
+    
+    // Check if patient exists
+    const [patientCheck] = await pool.execute('SELECT id FROM patients WHERE id = ?', [patientId]);
+    if (patientCheck.length === 0) {
+      return res.status(400).json({ error: `Patient with ID ${patientId} does not exist` });
+    }
+    
+    // Validate required fields
+    if (!appointmentDate || !appointmentTime || !type) {
+      return res.status(400).json({ error: 'Appointment date, time, and type are required' });
+    }
+    
+    // Ensure date is stored correctly - if date is in YYYY-MM-DD format, use it as-is
+    // MySQL DATE type will handle it correctly without timezone conversion
+    const finalDate = appointmentDate.match(/^\d{4}-\d{2}-\d{2}$/) ? appointmentDate : appointmentDate;
+    
     await pool.execute(
       `UPDATE appointments SET patientId=?, appointmentDate=?, appointmentTime=?, 
        duration=?, type=?, status=?, notes=? WHERE id=?`,
-      [patientId, appointmentDate, appointmentTime, duration, type, status, notes, req.params.id]
+      [patientId, finalDate, appointmentTime, duration || 30, type, status || 'Scheduled', notes || null, req.params.id]
     );
     const [updated] = await pool.execute(
       `SELECT a.*, p.firstName, p.lastName FROM appointments a 
@@ -128,7 +177,18 @@ router.put('/api/appointments/:id', async (req, res) => {
     );
     res.json(updated[0]);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('❌ Error updating appointment:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      sqlState: error.sqlState,
+      sqlMessage: error.sqlMessage
+    });
+    res.status(500).json({ 
+      error: error.message,
+      code: error.code,
+      details: 'Check server logs for more information'
+    });
   }
 });
 
@@ -180,18 +240,39 @@ router.post('/api/treatments', async (req, res) => {
             description, diagnosis, procedure, procedureDetails, notes, nextVisitDate } = req.body;
     const procedureValue = procedureDetails || procedure || '';
     
-    // Convert undefined to null for MySQL compatibility
+    // Convert undefined/empty strings to null for MySQL compatibility
+    // Empty strings for dates should be null
+    const cleanDate = (date) => {
+      if (date === undefined || date === null || date === '' || date === 'undefined' || String(date).trim() === '') {
+        return null;
+      }
+      return date;
+    };
+    
+    const cleanString = (str) => {
+      if (str === undefined || str === null || str === '') return null;
+      return str;
+    };
+    
+    // Convert invalid appointmentId (0, empty, undefined) to null for foreign key constraint
+    const cleanAppointmentId = (id) => {
+      if (id === undefined || id === null || id === 0 || id === '' || String(id).trim() === '0') {
+        return null;
+      }
+      return id;
+    };
+    
     const params = [
       patientId ?? null,
-      appointmentId ?? null,
-      treatmentDate ?? null,
-      toothNumber ?? null,
+      cleanAppointmentId(appointmentId),
+      cleanDate(treatmentDate),
+      cleanString(toothNumber),
       treatmentType ?? null,
-      description ?? null,
+      cleanString(description),
       diagnosis ?? null,
       procedureValue || null,
-      notes ?? null,
-      nextVisitDate ?? null
+      cleanString(notes),
+      cleanDate(nextVisitDate)
     ];
     
     const [result] = await pool.execute(
@@ -228,18 +309,39 @@ router.put('/api/treatments/:id', async (req, res) => {
             description, diagnosis, procedure, procedureDetails, notes, nextVisitDate } = req.body;
     const procedureValue = procedureDetails || procedure || '';
     
-    // Convert undefined to null for MySQL compatibility
+    // Convert undefined/empty strings to null for MySQL compatibility
+    // Empty strings for dates should be null
+    const cleanDate = (date) => {
+      if (date === undefined || date === null || date === '' || date === 'undefined' || String(date).trim() === '') {
+        return null;
+      }
+      return date;
+    };
+    
+    const cleanString = (str) => {
+      if (str === undefined || str === null || str === '') return null;
+      return str;
+    };
+    
+    // Convert invalid appointmentId (0, empty, undefined) to null for foreign key constraint
+    const cleanAppointmentId = (id) => {
+      if (id === undefined || id === null || id === 0 || id === '' || String(id).trim() === '0') {
+        return null;
+      }
+      return id;
+    };
+    
     const params = [
       patientId ?? null,
-      appointmentId ?? null,
-      treatmentDate ?? null,
-      toothNumber ?? null,
+      cleanAppointmentId(appointmentId),
+      cleanDate(treatmentDate),
+      cleanString(toothNumber),
       treatmentType ?? null,
-      description ?? null,
+      cleanString(description),
       diagnosis ?? null,
       procedureValue || null,
-      notes ?? null,
-      nextVisitDate ?? null,
+      cleanString(notes),
+      cleanDate(nextVisitDate),
       req.params.id
     ];
     
@@ -299,6 +401,46 @@ router.post('/api/payments', async (req, res) => {
     const { patientId, treatmentId, appointmentId, paymentDate, amount, paymentMethod,
             paymentType, description, status } = req.body;
     
+    // Validate patientId - must be a valid number and exist in patients table
+    if (!patientId || patientId === 0 || patientId === '0' || patientId === null || patientId === undefined) {
+      return res.status(400).json({ error: 'Patient ID is required and must be valid' });
+    }
+    
+    // Check if patient exists
+    const [patientCheck] = await pool.execute('SELECT id FROM patients WHERE id = ?', [patientId]);
+    if (patientCheck.length === 0) {
+      return res.status(400).json({ error: `Patient with ID ${patientId} does not exist` });
+    }
+    
+    // Convert invalid treatmentId and appointmentId (0, empty, undefined) to null for foreign key constraint
+    const cleanTreatmentId = (id) => {
+      if (id === undefined || id === null || id === 0 || id === '' || String(id).trim() === '0') {
+        return null;
+      }
+      return id;
+    };
+    
+    const cleanAppointmentId = (id) => {
+      if (id === undefined || id === null || id === 0 || id === '' || String(id).trim() === '0') {
+        return null;
+      }
+      return id;
+    };
+    
+    // Validate required fields
+    if (!paymentDate || !amount || !paymentMethod || !paymentType) {
+      return res.status(400).json({ error: 'Payment date, amount, method, and type are required' });
+    }
+
+    // If treatmentId is provided, check its existence in the treatments table
+    const cleanTreatment = cleanTreatmentId(treatmentId);
+    if (cleanTreatment !== null) {
+      const [treatmentCheck] = await pool.execute('SELECT id FROM treatments WHERE id = ?', [cleanTreatment]);
+      if (treatmentCheck.length === 0) {
+        return res.status(400).json({ error: `Treatment with ID ${cleanTreatment} does not exist` });
+      }
+    }
+    
     // Generate invoice number
     const date = new Date();
     const year = date.getFullYear();
@@ -310,8 +452,8 @@ router.post('/api/payments', async (req, res) => {
       `INSERT INTO payments (patientId, treatmentId, appointmentId, paymentDate, amount, 
        paymentMethod, paymentType, description, status, invoiceNumber) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [patientId, treatmentId, appointmentId, paymentDate, amount, paymentMethod,
-       paymentType, description, status || 'Paid', invoiceNumber]
+      [patientId, cleanTreatmentId(treatmentId), cleanAppointmentId(appointmentId), paymentDate, amount, paymentMethod,
+       paymentType, description || null, status || 'Paid', invoiceNumber]
     );
     const [newPayment] = await pool.execute(
       `SELECT p.*, pt.firstName, pt.lastName FROM payments p 
@@ -320,7 +462,18 @@ router.post('/api/payments', async (req, res) => {
     );
     res.status(201).json(newPayment[0]);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('❌ Error creating payment:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      sqlState: error.sqlState,
+      sqlMessage: error.sqlMessage
+    });
+    res.status(500).json({ 
+      error: error.message,
+      code: error.code,
+      details: 'Check server logs for more information'
+    });
   }
 });
 
