@@ -256,7 +256,18 @@ router.put('/api/treatments/:id', async (req, res) => {
     );
     res.json(updated[0]);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('❌ Error updating treatment:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      sqlState: error.sqlState,
+      sqlMessage: error.sqlMessage
+    });
+    res.status(500).json({ 
+      error: error.message,
+      code: error.code,
+      details: 'Check server logs for more information'
+    });
   }
 });
 
