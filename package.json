@@ -10,7 +10,7 @@
     "start:angular": "ng serve",
     "build": "ng build",
     "build:client": "ng build --configuration=client",
-    "build:render": "NODE_OPTIONS='--max-old-space-size=1024' ng build --configuration=client",
+    "build:render": "NODE_OPTIONS='--max-old-space-size=1024' npm run build:client",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:todo": "node dist/todo/server/server.mjs",

@@ -14,6 +14,12 @@ The memory error happens because Render is running the development server. Updat
 
 **Build Command:**
 ```bash
+NODE_OPTIONS='--max-old-space-size=1024' npm install && npx ng build --configuration=client
+```
+
+**OR** (if the above doesn't work):
+
+```bash
 NODE_OPTIONS='--max-old-space-size=1024' npm install && npm run build:client
 ```
 

@@ -10,7 +10,7 @@ npm install
 
 # Build Angular app (client-only, no SSR)
 echo "🔨 Building Angular application..."
-ng build --configuration=client
+npx ng build --configuration=client
 
 echo "✅ Build complete!"
 echo "📁 Output directory: dist/todo/browser"
