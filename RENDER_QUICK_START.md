@@ -2,9 +2,9 @@
 
 ## 🚀 Quick Fix for Memory Error
 
-The memory error occurs because Angular SSR builds are very memory-intensive. Here's the solution:
+The memory error occurs because Render is running `npm run start` which starts the Angular development server (`ng serve`). This is very memory-intensive and not for production.
 
-## Solution: Use Client-Only Build
+## Solution: Use Production Server
 
 ### Step 1: Update Build Command in Render
 
@@ -14,12 +14,21 @@ In your Render service settings, change the **Build Command** to:
 NODE_OPTIONS='--max-old-space-size=1024' npm install && npm run build:client
 ```
 
-### Step 2: Update Publish Directory
+### Step 2: Update Start Command (IMPORTANT!)
 
-Set **Publish Directory** to:
+Change the **Start Command** from `npm run start` to:
+
+```bash
+npm run start:prod
 ```
-dist/todo/browser
+
+**OR**
+
+```bash
+node server/server.js
 ```
+
+This will serve the built static files instead of running the development server.
 
 ### Step 3: Environment Variables
 
@@ -56,14 +65,13 @@ NODE_ENV=production
    - Publish Directory: `dist/todo/browser`
    - Plan: Free
 
-### Option B: Single Service
+### Option B: Single Service (Recommended for Simplicity)
 
 1. **Web Service**
    - Build Command: `NODE_OPTIONS='--max-old-space-size=1024' npm install && npm run build:client`
-   - Start Command: `npm run start:server`
+   - Start Command: `npm run start:prod` (or `node server/server.js`)
    - Plan: Starter ($7/month) or higher
-
-2. **Update server.js** to serve static files (see RENDER_DEPLOYMENT.md)
+   - The server now serves both API and frontend from one service
 
 ## If Still Getting Memory Errors
 
