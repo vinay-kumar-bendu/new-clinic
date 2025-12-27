@@ -144,14 +144,70 @@ router.delete('/api/appointments/:id', async (req, res) => {
 // ========== TREATMENTS API ==========
 router.get('/api/treatments', async (req, res) => {
   try {
+    // Check if pool is available
+    if (!pool) {
+      throw new Error('Database connection pool not initialized');
+    }
+    
     const [rows] = await pool.execute(
       `SELECT t.*, p.firstName, p.lastName FROM treatments t 
        LEFT JOIN patients p ON t.patientId = p.id 
-       ORDER BY t.treatmentDate DESC`
+       ORDER BY t.treatmentDate DESC, t.id DESC`
     );
     res.json(rows);
   } catch (error) {
-    console.error('Error fetching treatments:', error);
+    console.error('❌ Error fetching treatments:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      sqlState: error.sqlState,
+      sqlMessage: error.sqlMessage,
+      stack: error.stack
+    });
+    res.status(500).json({ 
+      error: error.message,
+      code: error.code,
+      sqlState: error.sqlState,
+      sqlMessage: error.sqlMessage,
+      details: 'Check server logs for more information'
+    });
+  }
+});
+
+router.post('/api/treatments', async (req, res) => {
+  try {
+    const { patientId, appointmentId, treatmentDate, toothNumber, treatmentType,
+            description, diagnosis, procedure, procedureDetails, notes, nextVisitDate } = req.body;
+    const procedureValue = procedureDetails || procedure || '';
+    
+    // Convert undefined to null for MySQL compatibility
+    const params = [
+      patientId ?? null,
+      appointmentId ?? null,
+      treatmentDate ?? null,
+      toothNumber ?? null,
+      treatmentType ?? null,
+      description ?? null,
+      diagnosis ?? null,
+      procedureValue || null,
+      notes ?? null,
+      nextVisitDate ?? null
+    ];
+    
+    const [result] = await pool.execute(
+      `INSERT INTO treatments (patientId, appointmentId, treatmentDate, toothNumber, 
+       treatmentType, description, diagnosis, procedureDetails, notes, nextVisitDate) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      params
+    );
+    const [newTreatment] = await pool.execute(
+      `SELECT t.*, p.firstName, p.lastName FROM treatments t 
+       LEFT JOIN patients p ON t.patientId = p.id WHERE t.id = ?`,
+      [result.insertId]
+    );
+    res.status(201).json(newTreatment[0]);
+  } catch (error) {
+    console.error('❌ Error creating treatment:', error);
     console.error('Error details:', {
       message: error.message,
       code: error.code,
@@ -166,40 +222,32 @@ router.get('/api/treatments', async (req, res) => {
   }
 });
 
-router.post('/api/treatments', async (req, res) => {
-  try {
-    const { patientId, appointmentId, treatmentDate, toothNumber, treatmentType,
-            description, diagnosis, procedure, procedureDetails, notes, nextVisitDate } = req.body;
-    const procedureValue = procedureDetails || procedure || '';
-    const [result] = await pool.execute(
-      `INSERT INTO treatments (patientId, appointmentId, treatmentDate, toothNumber, 
-       treatmentType, description, diagnosis, procedureDetails, notes, nextVisitDate) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [patientId, appointmentId, treatmentDate, toothNumber, treatmentType,
-       description, diagnosis, procedureValue, notes, nextVisitDate]
-    );
-    const [newTreatment] = await pool.execute(
-      `SELECT t.*, p.firstName, p.lastName FROM treatments t 
-       LEFT JOIN patients p ON t.patientId = p.id WHERE t.id = ?`,
-      [result.insertId]
-    );
-    res.status(201).json(newTreatment[0]);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 router.put('/api/treatments/:id', async (req, res) => {
   try {
     const { patientId, appointmentId, treatmentDate, toothNumber, treatmentType,
             description, diagnosis, procedure, procedureDetails, notes, nextVisitDate } = req.body;
     const procedureValue = procedureDetails || procedure || '';
+    
+    // Convert undefined to null for MySQL compatibility
+    const params = [
+      patientId ?? null,
+      appointmentId ?? null,
+      treatmentDate ?? null,
+      toothNumber ?? null,
+      treatmentType ?? null,
+      description ?? null,
+      diagnosis ?? null,
+      procedureValue || null,
+      notes ?? null,
+      nextVisitDate ?? null,
+      req.params.id
+    ];
+    
     await pool.execute(
       `UPDATE treatments SET patientId=?, appointmentId=?, treatmentDate=?, toothNumber=?, 
        treatmentType=?, description=?, diagnosis=?, procedureDetails=?, notes=?, nextVisitDate=? 
        WHERE id=?`,
-      [patientId, appointmentId, treatmentDate, toothNumber, treatmentType,
-       description, diagnosis, procedureValue, notes, nextVisitDate, req.params.id]
+      params
     );
     const [updated] = await pool.execute(
       `SELECT t.*, p.firstName, p.lastName FROM treatments t 
